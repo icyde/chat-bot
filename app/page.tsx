@@ -17,7 +17,7 @@ export default function Home() {
     return;
   }
   return (
-    <div>
+    <div className="w-screen h-screen">
       {showModal ? (
       <ChatWindow/>) : (
         <></>
