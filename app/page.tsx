@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import ChatWindow from "./ChatWindow"
+import ChatWindow from "./components/ChatWindow"
 import { useState } from "react";
 import { useChat } from "ai/react";
 import mockMessages from "./mockMessages.js"
