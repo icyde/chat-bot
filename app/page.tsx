@@ -23,6 +23,7 @@ export default function Home() {
       )}
       <button
         onClick={handleButton}
+        id="chatbot-button"
         className={`bg-[#2d549f] hover:bg-blue-600 font-bold rounded-full ${!showModal ? "p-2" : "p-3"} fixed z-90 bottom-10 right-8`}
       >
         {!showModal ? (
