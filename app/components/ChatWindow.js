@@ -3,7 +3,7 @@ import Header from "./Header";
 import FreshChat from "./FreshChat"
 
 
-const ChatWindow = () => {
+const ChatWindow = ({messages, setMessages}) => {
   const [showFreshChat, setShowFreshChat] = useState(false)
   const handleFirstCardClick = ()=>{
     setShowFreshChat(!showFreshChat)
@@ -13,12 +13,12 @@ const ChatWindow = () => {
   }
   return (
     <div
-      className="fixed z-90 bottom-[84px]
-     right-8 w-[405px] h-[650px] bg-[#F4F5F7] rounded-lg"
+      className={`fixed z-90 bottom-[84px]
+     right-8 w-[405px] h-[650px] bg-[#F4F5F7] rounded-lg shadow-lg`}
     >
       <Header></Header>
       {showFreshChat ? (
-        <FreshChat handleBack={handleBack}/>
+        <FreshChat handleBack={handleBack} setMessages={setMessages} messages={messages}/>
       ) : (
         <div title="body" className="flex align-center justify-center py-12">
           <button

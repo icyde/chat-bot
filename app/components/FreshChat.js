@@ -2,9 +2,8 @@ import React, { useState } from 'react';
 import Image from "next/image";
 
 
-const FreshChat = ({handleBack}) => {
+const FreshChat = ({handleBack, setMessages, messages}) => {
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState([])
   const [id, setId] = useState(0)
   const handleSubmit = (e) =>{
     e.preventDefault();
@@ -17,7 +16,10 @@ const FreshChat = ({handleBack}) => {
     <div className="p-6 h-full flex flex-col ">
       <div className="p-3 w-full h-5/6 bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto">
         <div className="border-b-2 pb-1 flex">
-          <button onClick={handleBack} className="hover:bg-slate-200 rounded-full p-1 ">
+          <button
+            onClick={handleBack}
+            className="hover:bg-slate-200 rounded-full p-1 "
+          >
             <Image
               src="/arrow-left.png"
               width={20}
@@ -30,7 +32,12 @@ const FreshChat = ({handleBack}) => {
 
         {messages.length > 0
           ? messages.map((m) => (
-              <div key={m.id}>
+              <div
+                key={m.id}
+                className={`rounded-2xl w-fit p-2  ${
+                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-blue-950"
+                }`}
+              >
                 <span>{m.role === "user" ? "👤" : "🤖"}: </span>
                 <span className={m.role === "user" ? "text-blue-400" : ""}>
                   {m.content}
@@ -45,7 +52,8 @@ const FreshChat = ({handleBack}) => {
             value={input}
             placeholder="Say something..."
             onChange={(e) => setInput(e.target.value)}
-            className="w-full rounded-full px-4 py-1 text-gray-900 focus:outline-0 "
+            autoFocus={true}
+            className="w-full rounded-full px-4 py-1 text-gray-900 focus:outline-0"
           />
         </form>
       </div>

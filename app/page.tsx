@@ -2,31 +2,32 @@
 import Image from "next/image";
 import ChatWindow from "./components/ChatWindow"
 import { useState } from "react";
-import { useChat } from "ai/react";
-import mockMessages from "./mockMessages.js"
+
 
 
 export default function Home() {
-  const { messages, input, handleInputChange, handleSubmit } = useChat();
   const [showModal, setShowModal] = useState(false)
+  const [messages, setMessages] = useState([]);
+
   const handleButton = () => {
     setShowModal(!showModal);
   };
-
-  const mockSubmit = () =>{
-    return;
-  }
   return (
     <div className="w-screen h-screen">
       {showModal ? (
-      <ChatWindow/>) : (
+        <ChatWindow messages={messages} setMessages={setMessages} />
+      ) : (
         <></>
       )}
       <button
         onClick={handleButton}
-        className="bg-[#2d549f] hover:bg-blue-600 font-bold rounded-full p-2 fixed z-90 bottom-10 right-8"
+        className={`bg-[#2d549f] hover:bg-blue-600 font-bold rounded-full ${!showModal ? "p-2" : "p-3"} fixed z-90 bottom-10 right-8`}
       >
-        <Image src="/chat.png" alt="chat icon" width={25} height={25}></Image>
+        {!showModal ? (
+          <Image src="/chat.png" alt="chat icon" width={25} height={25}></Image>
+        ) : (
+          <Image src="/close.png" alt="close icon" width={15} height={15}></Image>
+        )}
       </button>
     </div>
   );
