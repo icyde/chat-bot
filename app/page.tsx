@@ -12,8 +12,10 @@ export default function Home() {
   const handleButton = () => {
     setShowModal(!showModal);
   };
+
+
   return (
-    <div className="w-screen h-screen">
+    <div>
       {showModal ? (
         <ChatWindow messages={messages} setMessages={setMessages} />
       ) : (
