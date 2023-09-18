@@ -3,8 +3,10 @@ import Image from "next/image";
 import ChatWindow from "./components/ChatWindow"
 import { useState } from "react";
 
-
-
+/* Home page contains ChatWindow component which is the container for the whole chat window
+   showModal shows/hides the chat window
+   messages stores the chat history.   
+*/
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [messages, setMessages] = useState([]);

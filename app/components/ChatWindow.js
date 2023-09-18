@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import Header from "./Header";
 import FreshChat from "./FreshChat"
 
+/* 
+ChatWindow contains FreshChat component, which is to communicate with a live agent
+showFreshChat enters/hides the chat-box with the live agent
+*/
+
 
 const ChatWindow = ({messages, setMessages}) => {
   const [showFreshChat, setShowFreshChat] = useState(false)
@@ -14,22 +19,26 @@ const ChatWindow = ({messages, setMessages}) => {
   return (
     <div
       className={`fixed z-90 bottom-[84px]
-     right-8 w-[405px] h-[650px] bg-[#F4F5F7] rounded-lg shadow-lg`}
+     right-8 w-[75vw] h-[70vh] max-w-[405px] max-h-[650px] bg-[#F4F5F7] rounded-lg shadow-lg`}
     >
       <Header></Header>
       {showFreshChat ? (
-        <FreshChat handleBack={handleBack} setMessages={setMessages} messages={messages}/>
+        <FreshChat
+          handleBack={handleBack}
+          setMessages={setMessages}
+          messages={messages}
+        />
       ) : (
         <div title="body" className="flex align-center justify-center py-12">
           <button
             title="card"
             onClick={handleFirstCardClick}
-            class="block max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100"
+            className="block max-w-sm p-6 bg-white border border-gray-200 rounded-lg shadow hover:bg-gray-100"
           >
-            <h5 class="mb-2 text-2xl font-bold tracking-tight text-gray-900 ">
+            <h5 className="mb-2 text-2xl font-bold tracking-tight text-gray-900 ">
               FreshChat
             </h5>
-            <p class="font-normal text-gray-700 ">
+            <p className="font-normal text-gray-700 ">
               Click Here to chat with our live agents!
             </p>
           </button>
