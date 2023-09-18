@@ -1,20 +1,59 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import Image from "next/image";
+import {getGroup, getChannel, createUser, createConversation } from "../utils/api"
 
+/* 
+Freshchat - communicate with live agents on freshchat
+input: user input from text box
+id: message id for mapping
+handleSubmit: Submit user message from chatbot to freshchat system
+messages: Message history that shows in chat app
+message: message template containing groupId, channelId, and input, to create conversation
+*/
+
+//TODO: Post request: Create user, submit new message to agent, get and store userID. 
+//TODO: Set up webhooks to receive messages from agent
+//TODO: Implement persistence(?) on refresh?
 
 const FreshChat = ({handleBack, setMessages, messages}) => {
   const [input, setInput] = useState("")
   const [id, setId] = useState(0)
-  const handleSubmit = (e) =>{
+  const [userId, setUserId] = useState("")
+  const [conversationId, setConversationId] = useState("")
+  const [errors, setErrors] = useState("")
+  const [message, setMessage] = useState({})
+
+  useEffect(()=>{
+    //Get the groupId(agent) and ChannelId for the conversation
+    const fetchData = async () =>{
+    const groupId = await getGroup(setErrors)
+    const channelId = await getChannel(setErrors)
+    setMessage((prev)=>({...prev, groupId: groupId, channelId: channelId}))}
+    fetchData().catch(console.error)
+  },[])
+
+  const handleSubmit = async (e) =>{
+    //submit input (chatbox)
     e.preventDefault();
     setMessages((prev)=>[...prev, {id: id,role:"user", content:input }])
-    setInput("");
     setId((prev)=> prev +1)
+    if (userId === ""){
+    //if user is not created, create new user and conversation
+    const user = await createUser(setErrors);
+    setUserId(user)
+    const convoId = await createConversation(setErrors, {userId:user, channelId:message.channelId, groupId:message.groupId, message:input});
+    setConversationId(convoId);
+    }
+    if (errors !== ""){
+      //if errors from API, insert error message in messages
+      setMessages((prev)=>[...prev, {id: id, role:"admin", content:errors}])
+      setId((prev)=>prev+1)
+    }
+    setInput("");
   }
-
   return (
-    <div className="p-6 h-full flex flex-col ">
-      <div className="p-3 w-full h-5/6 bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto">
+    <div className="p-3 h-[87.5%] flex flex-col ">
+      <div className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto">
         <div className="border-b-2 pb-1 flex">
           <button
             onClick={handleBack}
@@ -24,10 +63,10 @@ const FreshChat = ({handleBack, setMessages, messages}) => {
               src="/arrow-left.png"
               width={20}
               height={20}
-              className=""
+              alt="back button"
             ></Image>
           </button>
-          <span className="text-xl pl-1 pt-0.5">Oyika Chatbot</span>
+          <span className="text-lg md:text-2xl pl-1 pt-0.5">Oyika Chatbot</span>
         </div>
 
         {messages.length > 0
