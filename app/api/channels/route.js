@@ -9,6 +9,5 @@ export async function GET() {
   });
   const data = await res.json();
   const channels = data.channels
-  console.log(channels[0].id)
   return NextResponse.json(channels[0].id);
 }
