@@ -9,7 +9,16 @@ export const createUser = async (setErrors) => {
   };
   try {
     const res = await fetch("/api/user", requestOptions);
-    return res.json();
+    console.log(res)
+    if (res.ok){
+      return res.json();
+    }
+    else{
+      setErrors(
+        "There has been an error, please refresh the page or contact an administrator."
+      );
+      return res;
+    }
   } catch (error) {
     console.log(error);
     setErrors(
@@ -23,7 +32,14 @@ export const getGroup = async (setErrors) => {
   //get groupId
   try {
     const res = await fetch("/api/groups");
-    return res.json();
+    if (res.ok) {
+      return res.json();
+    } else {
+      setErrors(
+        "There has been an error, please refresh the page or contact an administrator."
+      );
+      return res;
+    }
   } catch (error) {
     console.log(error);
     setErrors(
@@ -37,7 +53,14 @@ export const getChannel = async (setErrors) => {
   //get channelId
   try {
     const res = await fetch("/api/channels");
-    return res.json();
+    if (res.ok) {
+      return res.json();
+    } else {
+      setErrors(
+        "There has been an error, please refresh the page or contact an administrator."
+      );
+      return res;
+    }
   } catch (error) {
     console.log(error);
     setErrors(
@@ -56,7 +79,15 @@ export const createConversation = async(setErrors, body) =>{
   };
   try {
     const res = await fetch("/api/conversations", requestOptions);
-    return res.json();
+    if (res.ok) {
+      console.log("convo",res)
+      return res.json();
+    } else {
+      setErrors(
+        "There has been an error, please refresh the page or contact an administrator."
+      );
+      return res;
+    }
   } catch (error) {
     console.log(error);
     setErrors(

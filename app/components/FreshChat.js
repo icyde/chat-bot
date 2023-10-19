@@ -1,6 +1,5 @@
 import React, { useState,useEffect } from 'react';
 import Image from "next/image";
-import {getGroup, getChannel, createUser, createConversation } from "../utils/api"
 
 /* 
 Freshchat - communicate with live agents on freshchat
@@ -22,35 +21,77 @@ const FreshChat = ({handleBack, setMessages, messages}) => {
   const [conversationId, setConversationId] = useState("")
   const [errors, setErrors] = useState("")
   const [message, setMessage] = useState({})
+  const URL = process.env.NEXT_PUBLIC_VERCEL_URL
+    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api`
+    : "http://localhost:3000/api";
 
-  useEffect(()=>{
-    //Get the groupId(agent) and ChannelId for the conversation
-    const fetchData = async () =>{
-    const groupId = await getGroup(setErrors)
-    const channelId = await getChannel(setErrors)
-    setMessage((prev)=>({...prev, groupId: groupId, channelId: channelId}))}
-    fetchData().catch(console.error)
-  },[])
+// useEffect(() => {
+//   const eventSource = new EventSource(`/api/webhook`, {
+//     withCredentials: true,
+//   });
+//   eventSource.onopen = () => {
+//     console.log("open");
+//   };
+//   eventSource.onmessage = (e) => {
+//     console.log(e.data);
+//   };
+//   eventSource.onerror = (e) => {
+//     console.log(e);
+//   };
+
+//   return () => {
+//     eventSource.close();
+//   };
+// }, []);
 
   const handleSubmit = async (e) =>{
     //submit input (chatbox)
     e.preventDefault();
     setMessages((prev)=>[...prev, {id: id,role:"user", content:input }])
     setId((prev)=> prev +1)
-    if (userId === ""){
-    //if user is not created, create new user and conversation
-    const user = await createUser(setErrors);
-    setUserId(user)
-    const convoId = await createConversation(setErrors, {userId:user, channelId:message.channelId, groupId:message.groupId, message:input});
-    setConversationId(convoId);
-    }
-    if (errors !== ""){
-      //if errors from API, insert error message in messages
-      setMessages((prev)=>[...prev, {id: id, role:"admin", content:errors}])
-      setId((prev)=>prev+1)
-    }
     setInput("");
+    await generateResponse(input)
   }
+
+  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const generateResponse = async (message) =>{
+    try{
+    await delay(2000)
+    const res = await fetch(`${URL}/query`,{
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({"input": message}),
+    })
+     const data = await res.json();
+     console.log(data);
+     setMessages((prev) => [
+       ...prev,
+       { id: id, role: "admin", content: data.response },
+     ]);
+     setId((prev) => prev + 1);
+  
+  }
+    catch(e){
+      console.log(e)
+    }
+   
+
+  }
+
+  useEffect(()=>{
+    if (errors !== ""){
+      setMessages((prev) => [
+        ...prev,
+        { id: id, role: "admin", content: errors },
+      ]);
+    }
+    setId((prev) => prev + 1);
+
+  },[errors, id, setMessages])
+
   return (
     <div className="p-3 h-[87.5%] flex flex-col ">
       <div className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto">
@@ -70,15 +111,15 @@ const FreshChat = ({handleBack, setMessages, messages}) => {
         </div>
 
         {messages.length > 0
-          ? messages.map((m) => (
+          ? messages.map((m, index) => (
               <div
-                key={m.id}
+                key={index}
                 className={`rounded-2xl w-fit p-2  ${
-                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-blue-950"
+                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-blue-700"
                 }`}
               >
                 <span>{m.role === "user" ? "👤" : "🤖"}: </span>
-                <span className={m.role === "user" ? "text-blue-400" : ""}>
+                <span className={m.role === "user" ? "text-blue-400" : "text-white"}>
                   {m.content}
                 </span>
               </div>
