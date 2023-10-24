@@ -1,10 +1,13 @@
+from __future__ import print_function
 from fastapi import FastAPI, HTTPException, Request
 from api.ai import generate_response
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import httpx
 
 app = FastAPI(docs_url="/api/docs", openapi_url="/api/openapi.json")
+client = httpx.AsyncClient()
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,6 +19,9 @@ app.add_middleware(
 
 class Query(BaseModel):
     input: str
+
+class User(BaseModel):
+    email: str
 
 @app.get("/api/healthchecker")
 def healthchecker():
@@ -50,3 +56,20 @@ async def incomingMessage(req: Request):
     content = body['events'][0]['payload']['message']['content']['text']
 
     print(conversationId, senderType, senderName, contentType, content)
+
+@app.post('/api/createUser')
+async def create_user(user: User):
+    host="https://oyika179.zendesk.com/sc"
+    username="app_65368d972be3d115294be513"
+    password="mIIDlC5TYBF0ZkVtkDTt4xJOdZzB7-6baoppJCb4MLDg_zWwjb_RDVzXBF22KibP4F3L6wb4EnCO0rlRpW_3Bg"
+    app_id="653630f5da6a21b7e5116952" 
+    headers= (username, password)
+
+    r = await client.request(
+        "POST",
+        f"{host}/v2/apps/{app_id}/users",
+        auth=headers,
+        data={'externalId': user.email},
+    )
+    res = r.json()
+    return res

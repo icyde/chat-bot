@@ -60,7 +60,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
   const generateResponse = async (message) => {
     try {
-      await delay(1000);
+      await delay(0);
       const res = await fetch(`${URL}/query`, {
         method: "POST",
         headers: {
