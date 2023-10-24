@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import ChatWindow from "./components/ChatWindow"
+import ChatWindow from "./components/ChatWindow";
 import { useState } from "react";
 
 /* Home page contains ChatWindow component which is the container for the whole chat window
@@ -19,11 +19,10 @@ export default function Home() {
   const hide = () => {
     window.parent.postMessage("hide", "*");
   };
-  
+
   const show = () => {
     window.parent.postMessage("show", "*");
   };
-
 
   return (
     <div>
@@ -37,7 +36,7 @@ export default function Home() {
         id="chatbot-button"
         className={`bg-[#2d549f] hover:bg-blue-600 font-bold rounded-full ${
           !showModal ? "p-2" : "p-3"
-        } fixed z-90 bottom-10 right-8`}
+        } fixed z-90 bottom-10 left-8`}
       >
         {!showModal ? (
           <Image src="/chat.png" alt="chat icon" width={25} height={25}></Image>

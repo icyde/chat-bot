@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import Header from "./Header";
-import FreshChat from "./FreshChat"
+import FreshChat from "./FreshChat";
 
 /* 
 ChatWindow contains FreshChat component, which is to communicate with a live agent
 showFreshChat enters/hides the chat-box with the live agent
 */
 
-
-const ChatWindow = ({messages, setMessages}) => {
-  const [showFreshChat, setShowFreshChat] = useState(false)
-  const handleFirstCardClick = ()=>{
-    setShowFreshChat(!showFreshChat)
-  }
-  const handleBack = () =>{
+const ChatWindow = ({ messages, setMessages }) => {
+  const [showFreshChat, setShowFreshChat] = useState(false);
+  const handleFirstCardClick = () => {
+    setShowFreshChat(!showFreshChat);
+  };
+  const handleBack = () => {
     handleFirstCardClick();
-  }
+  };
   return (
     <div
       className={`fixed z-90 bottom-[84px]
@@ -46,6 +45,6 @@ const ChatWindow = ({messages, setMessages}) => {
       )}
     </div>
   );
-}
+};
 
 export default ChatWindow;

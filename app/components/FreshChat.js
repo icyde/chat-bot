@@ -1,5 +1,6 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
+import Typing from "./Typing";
 
 /* 
 Freshchat - communicate with live agents on freshchat
@@ -10,87 +11,85 @@ messages: Message history that shows in chat app
 message: message template containing groupId, channelId, and input, to create conversation
 */
 
-//TODO: Post request: Create user, submit new message to agent, get and store userID. 
+//TODO: Post request: Create user, submit new message to agent, get and store userID.
 //TODO: Set up webhooks to receive messages from agent
 //TODO: Implement persistence(?) on refresh?
 
-const FreshChat = ({handleBack, setMessages, messages}) => {
-  const [input, setInput] = useState("")
-  const [id, setId] = useState(0)
-  const [userId, setUserId] = useState("")
-  const [conversationId, setConversationId] = useState("")
-  const [errors, setErrors] = useState("")
-  const [message, setMessage] = useState({})
+const FreshChat = ({ handleBack, setMessages, messages }) => {
+  const [input, setInput] = useState("");
+  const [id, setId] = useState(0);
+  const [userId, setUserId] = useState("");
+  const [conversationId, setConversationId] = useState("");
+  const [errors, setErrors] = useState("");
+  const [message, setMessage] = useState({});
+  const [isTyping, setIsTyping] = useState(false);
   const URL = process.env.NEXT_PUBLIC_VERCEL_URL
     ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api`
     : "http://localhost:3000/api";
 
-// useEffect(() => {
-//   const eventSource = new EventSource(`/api/webhook`, {
-//     withCredentials: true,
-//   });
-//   eventSource.onopen = () => {
-//     console.log("open");
-//   };
-//   eventSource.onmessage = (e) => {
-//     console.log(e.data);
-//   };
-//   eventSource.onerror = (e) => {
-//     console.log(e);
-//   };
+  // useEffect(() => {
+  //   const eventSource = new EventSource(`/api/webhook`, {
+  //     withCredentials: true,
+  //   });
+  //   eventSource.onopen = () => {
+  //     console.log("open");
+  //   };
+  //   eventSource.onmessage = (e) => {
+  //     console.log(e.data);
+  //   };
+  //   eventSource.onerror = (e) => {
+  //     console.log(e);
+  //   };
 
-//   return () => {
-//     eventSource.close();
-//   };
-// }, []);
+  //   return () => {
+  //     eventSource.close();
+  //   };
+  // }, []);
 
-  const handleSubmit = async (e) =>{
+  const handleSubmit = async (e) => {
     //submit input (chatbox)
     e.preventDefault();
-    setMessages((prev)=>[...prev, {id: id,role:"user", content:input }])
-    setId((prev)=> prev +1)
+    setIsTyping(true);
+    setMessages((prev) => [...prev, { id: id, role: "user", content: input }]);
+    setId((prev) => prev + 1);
     setInput("");
-    await generateResponse(input)
-  }
+    await generateResponse(input);
+  };
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  const generateResponse = async (message) =>{
-    try{
-    await delay(2000)
-    const res = await fetch(`${URL}/query`,{
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({"input": message}),
-    })
-     const data = await res.json();
-     console.log(data);
-     setMessages((prev) => [
-       ...prev,
-       { id: id, role: "admin", content: data.response },
-     ]);
-     setId((prev) => prev + 1);
-  
-  }
-    catch(e){
-      console.log(e)
-    }
-   
-
-  }
-
-  useEffect(()=>{
-    if (errors !== ""){
+  const generateResponse = async (message) => {
+    try {
+      await delay(1000);
+      const res = await fetch(`${URL}/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: message }),
+      });
+      const data = await res.json();
+      setIsTyping(false);
+      console.log(data);
       setMessages((prev) => [
         ...prev,
-        { id: id, role: "admin", content: errors },
+        { id: id, role: "admin", content: data.response },
       ]);
+      setId((prev) => prev + 1);
+    } catch (e) {
+      setIsTyping(false);
+      setErrors(
+        "Our chatbot is down at the moment. Please contact our hotline instead."
+      );
+      console.log(e);
     }
-    setId((prev) => prev + 1);
+  };
 
-  },[errors, id, setMessages])
+  useEffect(() => {
+    if (errors !== "") {
+      setMessages((prev) => [...prev, { role: "admin", content: errors }]);
+    }
+  }, [errors, setMessages]);
 
   return (
     <div className="p-3 h-[87.5%] flex flex-col ">
@@ -115,16 +114,19 @@ const FreshChat = ({handleBack, setMessages, messages}) => {
               <div
                 key={index}
                 className={`rounded-2xl w-fit p-2  ${
-                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-blue-700"
+                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-main"
                 }`}
               >
-                <span>{m.role === "user" ? "👤" : "🤖"}: </span>
-                <span className={m.role === "user" ? "text-blue-400" : "text-white"}>
-                  {m.content}
+                <span>{m.role === "user" ? "👤" : "🤖"} </span>
+                <span
+                  className={m.role === "user" ? "text-blue-400" : "text-white"}
+                >
+                  {`: ${m.content}`}
                 </span>
               </div>
             ))
           : ""}
+        {isTyping && <Typing />}
       </div>
       <div className="mt-4">
         <form onSubmit={handleSubmit}>
@@ -139,6 +141,6 @@ const FreshChat = ({handleBack, setMessages, messages}) => {
       </div>
     </div>
   );
-}
+};
 
 export default FreshChat;
