@@ -23,28 +23,8 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   const [errors, setErrors] = useState("");
   const [message, setMessage] = useState({});
   const [isTyping, setIsTyping] = useState(false);
-  const URL = process.env.NEXT_PUBLIC_VERCEL_URL
-    ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api`
-    : "http://localhost:3000/api";
-
-  // useEffect(() => {
-  //   const eventSource = new EventSource(`/api/webhook`, {
-  //     withCredentials: true,
-  //   });
-  //   eventSource.onopen = () => {
-  //     console.log("open");
-  //   };
-  //   eventSource.onmessage = (e) => {
-  //     console.log(e.data);
-  //   };
-  //   eventSource.onerror = (e) => {
-  //     console.log(e);
-  //   };
-
-  //   return () => {
-  //     eventSource.close();
-  //   };
-  // }, []);
+  const [isChatbot, setIsChatbot] = useState(true);
+  const URL = "http://localhost:5050/api";
 
   const handleSubmit = async (e) => {
     //submit input (chatbox)
@@ -53,14 +33,13 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
     setMessages((prev) => [...prev, { id: id, role: "user", content: input }]);
     setId((prev) => prev + 1);
     setInput("");
-    await generateResponse(input);
+    if (isChatbot) {
+      await generateResponse(input);
+    }
   };
-
-  const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const generateResponse = async (message) => {
     try {
-      await delay(0);
       const res = await fetch(`${URL}/query`, {
         method: "POST",
         headers: {
@@ -73,7 +52,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
       console.log(data);
       setMessages((prev) => [
         ...prev,
-        { id: id, role: "admin", content: data.response },
+        { id: id, role: "admin", content: data.latest_response },
       ]);
       setId((prev) => prev + 1);
     } catch (e) {
@@ -93,9 +72,9 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
   return (
     <div className="p-3 h-[87.5%] flex flex-col ">
-      <div className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto">
+      <div className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto no-overflow-anchoring">
         <div className="border-b-2 pb-1 flex">
-          <button
+          {/* <button
             onClick={handleBack}
             className="hover:bg-slate-200 rounded-full p-1 "
           >
@@ -105,7 +84,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
               height={20}
               alt="back button"
             ></Image>
-          </button>
+          </button> */}
           <span className="text-lg md:text-2xl pl-1 pt-0.5">Oyika Chatbot</span>
         </div>
 
@@ -113,20 +92,23 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
           ? messages.map((m, index) => (
               <div
                 key={index}
-                className={`rounded-2xl w-fit p-2  ${
+                className={`rounded-2xl w-fit p-2 max-w-[90%] ${
                   m.role === "user" ? "bg-slate-300 ml-auto" : "bg-main"
                 }`}
               >
                 <span>{m.role === "user" ? "👤" : "🤖"} </span>
                 <span
-                  className={m.role === "user" ? "text-blue-400" : "text-white"}
+                  className={`whitespace-pre-line ${
+                    m.role === "user" ? "text-blue-400" : "text-white"
+                  }`}
                 >
-                  {`: ${m.content}`}
+                  {": " + m.content}
                 </span>
               </div>
             ))
           : ""}
         {isTyping && <Typing />}
+        <div id="anchor"></div>
       </div>
       <div className="mt-4">
         <form onSubmit={handleSubmit}>

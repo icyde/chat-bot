@@ -70,3 +70,8 @@ body {
     opacity: 0;
   }
 }
+
+#anchor {
+  overflow-anchor: auto;
+  height: 1px;
+}
