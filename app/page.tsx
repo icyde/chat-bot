@@ -9,7 +9,14 @@ import { useState } from "react";
 */
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      role: "bot",
+      content: "Need help? Chat with our specialist now!",
+      name: "Oyika bot",
+      dateTime: "",
+    },
+  ]);
 
   const handleButton = () => {
     showModal ? hide() : show();

@@ -23,6 +23,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [historyExist, setHistoryExist] = useState(false);
+  const [answerFound, setAnswerFound] = useState(true);
   const CHATBOT_URL = "http://localhost:5000/api";
   const ZENDESK_URL = "http://localhost:8000/api";
   const containerRef = useRef(null);
@@ -30,7 +31,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   const generateResponse = async (message) => {
     //FROM CHATBOT
     try {
-      const res = await fetch(`${ZENDESK_URL}/query`, {
+      const res = await fetch(`${CHATBOT_URL}/query`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,11 +39,23 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         body: JSON.stringify({ input: message }),
       });
       const data = await res.json();
-      setIsTyping(false);
       console.log(data);
+      setIsTyping(false);
+      if (data.is_answer_found === 0) {
+        //Trigger Zendesk agent button
+        setAnswerFound(false);
+      }
       setMessages((prev) => [
         ...prev,
-        { role: "admin", content: data.latest_response },
+        {
+          role: "admin",
+          content: data.response,
+          name: "Oyika bot",
+          dateTime: new Date().toLocaleString([], {
+            dateStyle: "short",
+            timeStyle: "short",
+          }),
+        },
       ]);
     } catch (e) {
       setIsTyping(false);
@@ -116,7 +129,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         ) {
           setMessages((prev) => [
             ...prev,
-            { role: "admin", content: newMsg.content },
+            { role: "admin", content: newMsg.content, name: newMsg.senderName },
           ]);
         }
       };
@@ -163,7 +176,18 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   const handleSubmit = async (e) => {
     //submit input (chatbox)
     e.preventDefault();
-    setMessages((prev) => [...prev, { role: "user", content: input }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "user",
+        content: input,
+        name: email,
+        dateTime: new Date().toLocaleString([], {
+          dateStyle: "short",
+          timeStyle: "short",
+        }),
+      },
+    ]);
     setInput("");
     if (isChatbot) {
       setIsTyping(true);
@@ -180,7 +204,10 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   const handleSubmitEmail = async (e) => {
     e.preventDefault();
     setEmailSent(true);
-    setMessages((prev) => [{ role: "user", content: email }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: email, name: email, dateTime: "" },
+    ]);
     try {
       const oldConversationId = await getConversationId(email);
       if (oldConversationId !== null) {
@@ -201,6 +228,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
       const res = await data.json();
       const history = res.messages.map((message) => {
         const role = message.author.type === "user" ? "user" : "admin";
+        const name = message.author.displayName;
         const contentType = message.content.type;
         let content = "";
         if (contentType === "text") {
@@ -210,13 +238,25 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         }
 
         //TODO: Implement other content types
-        return { role: role, content: content };
+        return { role: role, content: content, name: name };
       });
       setMessages((prev) => [...prev, ...history]);
     } catch (error) {
       console.error("Get messages Error:", error);
     }
   };
+
+  function convertDateFormat(dateStr) {
+    const date = new Date(dateStr);
+    const options = {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    };
+    return date.toLocaleDateString("en-US", options);
+  }
 
   useEffect(() => {
     if (conversationId !== "") {
@@ -226,7 +266,10 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
   useEffect(() => {
     if (errors !== "") {
-      setMessages((prev) => [...prev, { role: "admin", content: errors }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "admin", content: errors, name: "System" },
+      ]);
     }
   }, [errors, setMessages]);
 
@@ -242,14 +285,70 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   }, [containerRef, messages]);
 
   return (
-    <div className="p-3 h-[87.5%] flex flex-col ">
+    <div className="p-3 h-[87.5%] flex flex-col">
+      {/* Card layout*/}
       <div
         ref={containerRef}
-        className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto no-overflow-anchoring"
+        className="p-3 w-full flex flex-col flex-1 bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto no-overflow-anchoring"
       >
-        <div className="border-b-2 pb-1 flex justify-between">
-          <span className="text-lg md:text-2xl pl-1 pt-0.5">Oyika Chat</span>
-          {isChatbot && (
+        <div className="flex flex-col flex-1 justify-between">
+          <div>
+            <div className="border-b-2 pb-1">
+              <span className="text-lg md:text-2xl pl-1 pt-0.5">
+                Oyika Chat
+              </span>
+            </div>
+            <div className="pt-1 pb-0 mb-0 text-center text-sm">
+              {new Date().toLocaleString([], {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
+            </div>
+            {messages.length > 0 ? (
+              messages.map((m, index) => (
+                <div key={index}>
+                  <div
+                    className={`rounded-2xl w-fit p-2 mt-2 ${
+                      m.role === "user" ? "bg-slate-300 ml-auto" : "bg-main"
+                    }`}
+                  >
+                    <span
+                      className={`whitespace-pre-line ${
+                        m.role === "user" ? "text-blue-400" : "text-white"
+                      }`}
+                    >
+                      {m.content}
+                    </span>
+                  </div>
+                  <div
+                    className={`w-fit text-xs px-2
+                      ${m.role === "user" ? "ml-auto " : ""}
+                    `}
+                  >
+                    {`${m.role === "user" ? "You" : m.name} ${m.dateTime}`}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <></>
+            )}
+            {emailSent === false ? (
+              <form onSubmit={handleSubmitEmail}>
+                <label>Email:</label>
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoFocus={true}
+                  className="w-[75%] rounded-xl px-4 py-1 text-gray-900 focus:outline-0 border block"
+                />
+              </form>
+            ) : (
+              <></>
+            )}
+            {isTyping && <Typing />}
+          </div>
+
+          {isChatbot && !answerFound && (
             <button
               onClick={(e) => setIsChatbot(false)}
               className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit outline mb-1 outline-gray-400 "
@@ -265,49 +364,15 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
               Restore history
             </button>
           ) : (
-            ""
+            <></>
           )}
         </div>
-        {emailSent === false ? (
-          <form onSubmit={handleSubmitEmail}>
-            <label>Email:</label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoFocus={true}
-              className="w-[75%] rounded-xl px-4 py-1 text-gray-900 focus:outline-0 border block"
-            />
-          </form>
-        ) : (
-          ""
-        )}
-
-        {messages.length > 0
-          ? messages.map((m, index) => (
-              <div
-                key={index}
-                className={`rounded-2xl w-fit p-2 max-w-[90%] ${
-                  m.role === "user" ? "bg-slate-300 ml-auto" : "bg-main"
-                }`}
-              >
-                <span>{m.role === "user" ? "👤" : "🤖"} </span>
-                <span
-                  className={`whitespace-pre-line ${
-                    m.role === "user" ? "text-blue-400" : "text-white"
-                  }`}
-                >
-                  {": " + m.content}
-                </span>
-              </div>
-            ))
-          : ""}
-        {isTyping && <Typing />}
       </div>
       <div className="mt-2">
         <form onSubmit={handleSubmit}>
           <input
             value={input}
-            disabled={emailSent === false}
+            disabled={emailSent === false || isTyping}
             placeholder="Say something..."
             onChange={(e) => setInput(e.target.value)}
             autoFocus={true}
