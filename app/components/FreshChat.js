@@ -81,7 +81,11 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
   const getConversationId = async (email) => {
     try {
-      const res = await fetch(`${ZENDESK_URL}/getConversation/${email}`);
+      const encodedMobile = encodeURIComponent(email);
+      console.log(encodedMobile);
+      const res = await fetch(
+        `${ZENDESK_URL}/getConversation/${encodedMobile}`
+      );
       const data = await res.json();
       if (data.errors) {
         return null;
@@ -129,7 +133,12 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         ) {
           setMessages((prev) => [
             ...prev,
-            { role: "admin", content: newMsg.content, name: newMsg.senderName },
+            {
+              role: "admin",
+              content: newMsg.content,
+              name: newMsg.senderName,
+              dateTime: convertDateFormat(newMsg.dateTime),
+            },
           ]);
         }
       };
@@ -141,6 +150,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
   );
 
   const sendMessage = async (message) => {
+    console.log(message, userId, conversationId);
     try {
       const res = await fetch(`${ZENDESK_URL}/sendMessage`, {
         method: "POST",
@@ -203,6 +213,10 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
   const handleSubmitEmail = async (e) => {
     e.preventDefault();
+    if (email === "") {
+      setErrors("Please enter a valid email");
+      return;
+    }
     setEmailSent(true);
     setMessages((prev) => [
       ...prev,
@@ -210,6 +224,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
     ]);
     try {
       const oldConversationId = await getConversationId(email);
+      console.log(oldConversationId);
       if (oldConversationId !== null) {
         setConversationId(oldConversationId);
         const oldUserId = await getUserId(email);
@@ -230,6 +245,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         const role = message.author.type === "user" ? "user" : "admin";
         const name = message.author.displayName;
         const contentType = message.content.type;
+        const dateTime = convertDateFormat(message.received);
         let content = "";
         if (contentType === "text") {
           content = message.content.text;
@@ -238,7 +254,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
         }
 
         //TODO: Implement other content types
-        return { role: role, content: content, name: name };
+        return { role: role, content: content, name: name, dateTime: dateTime };
       });
       setMessages((prev) => [...prev, ...history]);
     } catch (error) {
@@ -268,7 +284,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
     if (errors !== "") {
       setMessages((prev) => [
         ...prev,
-        { role: "admin", content: errors, name: "System" },
+        { role: "admin", content: errors, name: "System", dateTime: "" },
       ]);
     }
   }, [errors, setMessages]);
@@ -308,13 +324,13 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
               messages.map((m, index) => (
                 <div key={index}>
                   <div
-                    className={`rounded-2xl w-fit p-2 mt-2 ${
+                    className={`rounded-2xl w-fit max-w-[90%] p-2 mt-2  ${
                       m.role === "user" ? "bg-slate-300 ml-auto" : "bg-main"
                     }`}
                   >
                     <span
-                      className={`whitespace-pre-line ${
-                        m.role === "user" ? "text-blue-400" : "text-white"
+                      className={`whitespace-pre-wrap ${
+                        m.role === "user" ? "text-blue-400" : "text-slate-200"
                       }`}
                     >
                       {m.content}
@@ -333,15 +349,25 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
               <></>
             )}
             {emailSent === false ? (
-              <form onSubmit={handleSubmitEmail}>
-                <label>Email:</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoFocus={true}
-                  className="w-[75%] rounded-xl px-4 py-1 text-gray-900 focus:outline-0 border block"
-                />
-              </form>
+              <div className="ml-auto border w-[80%] p-2 mt-2 rounded-md border-gray-300">
+                <form onSubmit={handleSubmitEmail} className="flex flex-col">
+                  <label className="pl-2">Mobile</label>
+                  <input
+                    required
+                    placeholder="+6591234567"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoFocus={true}
+                    className="rounded-xl py-1 my-1 pl-2 text-gray-900 focus:outline-0 border-gray-400 border block"
+                  />
+                  <button
+                    onClick={handleSubmitEmail}
+                    className="ml-auto border rounded-full bg-main text-slate-200 py-1 px-2"
+                  >
+                    Send
+                  </button>
+                </form>
+              </div>
             ) : (
               <></>
             )}
@@ -350,8 +376,23 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
 
           {isChatbot && !answerFound && (
             <button
-              onClick={(e) => setIsChatbot(false)}
-              className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit outline mb-1 outline-gray-400 "
+              onClick={(e) => {
+                setIsChatbot(false);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    role: "admin",
+                    content:
+                      "Connecting to live agent... Please type your question again, thank you!",
+                    name: "Oyika bot",
+                    dateTime: new Date().toLocaleString([], {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    }),
+                  },
+                ]);
+              }}
+              className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit border border-slate-400 my-1"
             >
               Contact Live Agent
             </button>
@@ -359,7 +400,7 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
           {!isChatbot && historyExist ? (
             <button
               onClick={handleRestoreHistory}
-              className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit outline mb-1 outline-gray-400 "
+              className="hover:bg-slate-200 text-gray-600 px-2 mt-1 rounded-lg w-fit border border-gray-300 mb-1 outline-gray-400 "
             >
               Restore history
             </button>
@@ -373,10 +414,10 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
           <input
             value={input}
             disabled={emailSent === false || isTyping}
-            placeholder="Say something..."
+            placeholder="Type a message..."
             onChange={(e) => setInput(e.target.value)}
             autoFocus={true}
-            className="w-full rounded-full px-4 py-1 text-gray-900 focus:outline-0"
+            className="w-full rounded-full px-4 py-1 text-gray-900 focus:outline-0 border disabled:bg-slate-300 placeholder:disabled:text-slate-400"
           />
         </form>
       </div>

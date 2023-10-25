@@ -12,7 +12,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      content: "Need help? Chat with our specialist now!",
+      content: "Need help? Chat with our specialist bot now!",
       name: "Oyika bot",
       dateTime: "",
     },
