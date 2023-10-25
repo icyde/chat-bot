@@ -18,7 +18,7 @@ const ChatWindow = ({ messages, setMessages }) => {
   return (
     <div
       className={`fixed z-90 bottom-[84px]
-     right-8 w-[75vw] h-[70vh] max-w-[405px] max-h-[650px] bg-[#F4F5F7] rounded-lg shadow-lg`}
+     right-8 w-[75vw] h-[80vh] max-w-[405px] max-h-[650px] bg-[#F4F5F7] rounded-lg shadow-lg`}
     >
       <Header></Header>
       <FreshChat

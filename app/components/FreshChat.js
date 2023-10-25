@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Typing from "./Typing";
 
@@ -11,36 +11,26 @@ messages: Message history that shows in chat app
 message: message template containing groupId, channelId, and input, to create conversation
 */
 
-//TODO: Post request: Create user, submit new message to agent, get and store userID.
-//TODO: Set up webhooks to receive messages from agent
 //TODO: Implement persistence(?) on refresh?
 
 const FreshChat = ({ handleBack, setMessages, messages }) => {
   const [input, setInput] = useState("");
-  const [id, setId] = useState(0);
   const [userId, setUserId] = useState("");
   const [conversationId, setConversationId] = useState("");
   const [errors, setErrors] = useState("");
-  const [message, setMessage] = useState({});
   const [isTyping, setIsTyping] = useState(false);
   const [isChatbot, setIsChatbot] = useState(true);
-  const URL = "http://localhost:5050/api";
-
-  const handleSubmit = async (e) => {
-    //submit input (chatbox)
-    e.preventDefault();
-    setIsTyping(true);
-    setMessages((prev) => [...prev, { id: id, role: "user", content: input }]);
-    setId((prev) => prev + 1);
-    setInput("");
-    if (isChatbot) {
-      await generateResponse(input);
-    }
-  };
+  const [email, setEmail] = useState("");
+  const [emailSent, setEmailSent] = useState(false);
+  const [historyExist, setHistoryExist] = useState(false);
+  const CHATBOT_URL = "http://localhost:5000/api";
+  const ZENDESK_URL = "http://localhost:8000/api";
+  const containerRef = useRef(null);
 
   const generateResponse = async (message) => {
+    //FROM CHATBOT
     try {
-      const res = await fetch(`${URL}/query`, {
+      const res = await fetch(`${ZENDESK_URL}/query`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,9 +42,8 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
       console.log(data);
       setMessages((prev) => [
         ...prev,
-        { id: id, role: "admin", content: data.latest_response },
+        { role: "admin", content: data.latest_response },
       ]);
-      setId((prev) => prev + 1);
     } catch (e) {
       setIsTyping(false);
       setErrors(
@@ -64,29 +53,234 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
     }
   };
 
+  const getUserId = async (email) => {
+    try {
+      const res = await fetch(`${ZENDESK_URL}/getUser/${email}`);
+      const data = await res.json();
+      if (data.errors) {
+        return null;
+      }
+      return data.user.id;
+    } catch (error) {
+      console.error("Get user Id Error:", error);
+    }
+  };
+
+  const getConversationId = async (email) => {
+    try {
+      const res = await fetch(`${ZENDESK_URL}/getConversation/${email}`);
+      const data = await res.json();
+      if (data.errors) {
+        return null;
+      }
+      return data.conversations[0].id;
+    } catch (error) {
+      console.error("Get conversation Error:", error);
+    }
+  };
+
+  const initConversation = async (message) => {
+    //FROM ZENDESK
+    try {
+      const res = await fetch(`${ZENDESK_URL}/initConversation`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          content: message,
+        }),
+      });
+      const data = await res.json();
+      setConversationId(data.conversationId);
+      setUserId(data.userId);
+    } catch (e) {
+      console.error(e);
+      setErrors(
+        "Our live chat is down at the moment. Please contact us at our hotline instead."
+      );
+    }
+  };
+
+  const connectToWebsocket = useCallback(
+    //TODO: CREATE WEBSOCKET IF CONVERSATIONID EXISTS
+    (conversationId) => {
+      let ws = new WebSocket(`ws://localhost:8000/ws/${conversationId}`);
+      ws.onmessage = (msg) => {
+        const newMsg = JSON.parse(msg.data);
+        if (
+          newMsg.conversationId === conversationId &&
+          newMsg.contentType === "text" &&
+          newMsg.senderType === "business"
+        ) {
+          setMessages((prev) => [
+            ...prev,
+            { role: "admin", content: newMsg.content },
+          ]);
+        }
+      };
+      ws.onerror = (error) => {
+        console.error(error);
+      };
+    },
+    [setMessages]
+  );
+
+  const sendMessage = async (message) => {
+    try {
+      const res = await fetch(`${ZENDESK_URL}/sendMessage`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: message,
+          userId: userId,
+          conversationId: conversationId,
+        }),
+      });
+      const data = await res.json();
+      setConversationId(data.conversationId);
+      setUserId(data.userId);
+    } catch (e) {
+      console.error(e);
+      setErrors(
+        "Our live chat is down at the moment. Please contact us at our hotline instead."
+      );
+    }
+  };
+
+  const getMessages = async (conversationId) => {
+    try {
+      const res = await fetch(`${ZENDESK_URL}/getMessages/${conversationId}`);
+      return res;
+    } catch (error) {
+      console.error("Get messages Error:", error);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    //submit input (chatbox)
+    e.preventDefault();
+    setMessages((prev) => [...prev, { role: "user", content: input }]);
+    setInput("");
+    if (isChatbot) {
+      setIsTyping(true);
+      await generateResponse(input);
+    } else if (conversationId === "") {
+      //initialize conversation
+      await initConversation(input);
+    } else {
+      //send message to agent
+      await sendMessage(input);
+    }
+  };
+
+  const handleSubmitEmail = async (e) => {
+    e.preventDefault();
+    setEmailSent(true);
+    setMessages((prev) => [{ role: "user", content: email }]);
+    try {
+      const oldConversationId = await getConversationId(email);
+      if (oldConversationId !== null) {
+        setConversationId(oldConversationId);
+        const oldUserId = await getUserId(email);
+        setUserId(oldUserId);
+        setHistoryExist(true);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleRestoreHistory = async (e) => {
+    setHistoryExist(false);
+    try {
+      const data = await getMessages(conversationId);
+      const res = await data.json();
+      const history = res.messages.map((message) => {
+        const role = message.author.type === "user" ? "user" : "admin";
+        const contentType = message.content.type;
+        let content = "";
+        if (contentType === "text") {
+          content = message.content.text;
+        } else {
+          content = "Unsupported content type";
+        }
+
+        //TODO: Implement other content types
+        return { role: role, content: content };
+      });
+      setMessages((prev) => [...prev, ...history]);
+    } catch (error) {
+      console.error("Get messages Error:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (conversationId !== "") {
+      connectToWebsocket(conversationId);
+    }
+  }, [connectToWebsocket, conversationId]);
+
   useEffect(() => {
     if (errors !== "") {
       setMessages((prev) => [...prev, { role: "admin", content: errors }]);
     }
   }, [errors, setMessages]);
 
+  useEffect(() => {
+    if (containerRef && containerRef.current) {
+      const element = containerRef.current;
+      element.scroll({
+        top: element.scrollHeight,
+        left: 0,
+        behavior: "smooth",
+      });
+    }
+  }, [containerRef, messages]);
+
   return (
     <div className="p-3 h-[87.5%] flex flex-col ">
-      <div className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto no-overflow-anchoring">
-        <div className="border-b-2 pb-1 flex">
-          {/* <button
-            onClick={handleBack}
-            className="hover:bg-slate-200 rounded-full p-1 "
-          >
-            <Image
-              src="/arrow-left.png"
-              width={20}
-              height={20}
-              alt="back button"
-            ></Image>
-          </button> */}
-          <span className="text-lg md:text-2xl pl-1 pt-0.5">Oyika Chatbot</span>
+      <div
+        ref={containerRef}
+        className="p-3 w-full flex-auto  bg-white border border-gray-200 rounded-lg shadow space-y-2 overflow-y-auto no-overflow-anchoring"
+      >
+        <div className="border-b-2 pb-1 flex justify-between">
+          <span className="text-lg md:text-2xl pl-1 pt-0.5">Oyika Chat</span>
+          {isChatbot && (
+            <button
+              onClick={(e) => setIsChatbot(false)}
+              className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit outline mb-1 outline-gray-400 "
+            >
+              Contact Live Agent
+            </button>
+          )}
+          {!isChatbot && historyExist ? (
+            <button
+              onClick={handleRestoreHistory}
+              className="hover:bg-slate-200 text-gray-600 px-2 rounded-lg w-fit outline mb-1 outline-gray-400 "
+            >
+              Restore history
+            </button>
+          ) : (
+            ""
+          )}
         </div>
+        {emailSent === false ? (
+          <form onSubmit={handleSubmitEmail}>
+            <label>Email:</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoFocus={true}
+              className="w-[75%] rounded-xl px-4 py-1 text-gray-900 focus:outline-0 border block"
+            />
+          </form>
+        ) : (
+          ""
+        )}
 
         {messages.length > 0
           ? messages.map((m, index) => (
@@ -108,12 +302,12 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
             ))
           : ""}
         {isTyping && <Typing />}
-        <div id="anchor"></div>
       </div>
-      <div className="mt-4">
+      <div className="mt-2">
         <form onSubmit={handleSubmit}>
           <input
             value={input}
+            disabled={emailSent === false}
             placeholder="Say something..."
             onChange={(e) => setInput(e.target.value)}
             autoFocus={true}
