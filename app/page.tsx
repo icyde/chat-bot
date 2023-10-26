@@ -9,6 +9,8 @@ import { useState } from "react";
 */
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState("");
+  const [conversationId, setConversationId] = useState("");
   const [messages, setMessages] = useState([
     {
       role: "bot",
@@ -34,7 +36,14 @@ export default function Home() {
   return (
     <div>
       {showModal ? (
-        <ChatWindow messages={messages} setMessages={setMessages} />
+        <ChatWindow
+          messages={messages}
+          setMessages={setMessages}
+          userId={userId}
+          setUserId={setUserId}
+          conversationId={conversationId}
+          setConversationId={setConversationId}
+        />
       ) : (
         <></>
       )}

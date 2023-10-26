@@ -22,9 +22,12 @@ const ChatWindow = ({ messages, setMessages }) => {
     >
       <Header></Header>
       <FreshChat
-        handleBack={handleBack}
         setMessages={setMessages}
         messages={messages}
+        userId={userId}
+        setUserId={setUserId}
+        setConversationId={setConversationId}
+        conversationId={conversationId}
       />
     </div>
   );
