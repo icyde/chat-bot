@@ -17,13 +17,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
+        {/* <script
           defer
           id="ze-snippet"
           src="https://static.zdassets.com/ekr/snippet.js?key=8e2d45f1-86a4-424f-baa4-9229f8385e42"
         >
           {" "}
-        </script>
+        </script> */}
       </head>
       <body className={inter.className}>{children}</body>
     </html>

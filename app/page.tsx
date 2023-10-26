@@ -43,7 +43,7 @@ export default function Home() {
         id="chatbot-button"
         className={`bg-[#2d549f] hover:bg-blue-600 font-bold rounded-full ${
           !showModal ? "p-2" : "p-3"
-        } fixed z-90 bottom-10 left-8`}
+        } fixed z-90 bottom-10 right-8`}
       >
         {!showModal ? (
           <Image src="/chat.png" alt="chat icon" width={25} height={25}></Image>

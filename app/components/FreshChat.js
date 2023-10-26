@@ -330,14 +330,14 @@ const FreshChat = ({ handleBack, setMessages, messages }) => {
                   >
                     <span
                       className={`whitespace-pre-wrap ${
-                        m.role === "user" ? "text-blue-400" : "text-slate-200"
+                        m.role === "user" ? "text-gray-800" : "text-slate-200"
                       }`}
                     >
                       {m.content}
                     </span>
                   </div>
                   <div
-                    className={`w-fit text-xs px-2
+                    className={`w-fit text-xs px-2 text-slate-500
                       ${m.role === "user" ? "ml-auto " : ""}
                     `}
                   >
