@@ -319,7 +319,7 @@ const FreshChat = ({
                 Oyika Chat
               </span>
             </div>
-            <div className="pt-1 pb-0 mb-0 text-center text-sm">
+            <div className="pt-1 pb-0 mb-0 text-center text-sm text-slate-500">
               {new Date().toLocaleString([], {
                 dateStyle: "short",
                 timeStyle: "short",
