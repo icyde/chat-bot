@@ -13,10 +13,15 @@ message: message template containing groupId, channelId, and input, to create co
 
 //TODO: Implement persistence(?) on refresh?
 
-const FreshChat = ({ handleBack, setMessages, messages }) => {
+const FreshChat = ({
+  userId,
+  setUserId,
+  conversationId,
+  setConversationId,
+  setMessages,
+  messages,
+}) => {
   const [input, setInput] = useState("");
-  const [userId, setUserId] = useState("");
-  const [conversationId, setConversationId] = useState("");
   const [errors, setErrors] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isChatbot, setIsChatbot] = useState(true);

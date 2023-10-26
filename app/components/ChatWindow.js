@@ -7,7 +7,14 @@ ChatWindow contains FreshChat component, which is to communicate with a live age
 showFreshChat enters/hides the chat-box with the live agent
 */
 
-const ChatWindow = ({ messages, setMessages }) => {
+const ChatWindow = ({
+  messages,
+  setMessages,
+  userId,
+  setUserId,
+  conversationId,
+  setConversationId,
+}) => {
   const [showFreshChat, setShowFreshChat] = useState(false);
   const handleFirstCardClick = () => {
     setShowFreshChat(!showFreshChat);
