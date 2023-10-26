@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
-import ChatWindow from "./components/ChatWindow";
 import { useState } from "react";
+import ChatWidget from "./components/ChatWidget";
 
 /* Home page contains ChatWindow component which is the container for the whole chat window
    showModal shows/hides the chat window
@@ -9,8 +9,10 @@ import { useState } from "react";
 */
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
-  const [userId, setUserId] = useState("");
+  const [email, setEmail] = useState("");
+  const [isChatbot, setIsChatbot] = useState(true);
   const [conversationId, setConversationId] = useState("");
+  const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([
     {
       role: "bot",
@@ -36,13 +38,17 @@ export default function Home() {
   return (
     <div>
       {showModal ? (
-        <ChatWindow
+        <ChatWidget
           messages={messages}
           setMessages={setMessages}
-          userId={userId}
-          setUserId={setUserId}
+          email={email}
+          setEmail={setEmail}
           conversationId={conversationId}
           setConversationId={setConversationId}
+          isChatbot={isChatbot}
+          setIsChatbot={setIsChatbot}
+          socket={socket}
+          setSocket={setSocket}
         />
       ) : (
         <></>
